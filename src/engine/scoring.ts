@@ -34,7 +34,7 @@ export function classifyHand(cards: Card[]): HandType {
   return handType;
 }
 
-const HAND_VALUES: Record<HandType, { base: number; mult: number }> = {
+export const HAND_VALUES: Record<HandType, { base: number; mult: number }> = {
   HighCard:     { base: 5,   mult: 1 },
   Pair:         { base: 10,  mult: 2 },
   TwoPair: { base: 20, mult: 2 },
@@ -52,10 +52,7 @@ export function chipValue(rank: number): number {
 
 export function scoreHand(cards: Card[]): number {
   const type = classifyHand(cards);
-  console.log( 'type:', type )
   const { base, mult } = HAND_VALUES[type];
-  console.log( 'base:', base, 'mult:', mult )
   const sumOfChipValues = cards.reduce((sum, card) => sum + chipValue(card.rank), 0);
-  console.log( 'sumOfChipValues:', sumOfChipValues )
   return (base + sumOfChipValues) * mult;
 }

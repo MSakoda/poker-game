@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+// @ts-ignore: side-effect import of global CSS without explicit type declarations
 import "./globals.css";
 
 const geistSans = Geist({

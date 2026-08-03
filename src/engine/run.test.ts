@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createRun, applyAction, isRunOver } from './run';
+import { createRun, applyAction, isRunOver, roundsSurvived } from './run';
 import { Action, RunState, RunStatus } from './types';
 
 describe('createRun', () => {
@@ -47,12 +47,37 @@ describe('applyAction', () => {
         runState = applyAction({type: 'play', cards: [1]}, runState);
         expect(runState.round).toEqual(2);
     })
-    it('should shuffle the deck when moving on to new round', () => {
+    it('should enter the shop phase without reshuffling when a round clears', () => {
         runState = {...runState,
             roundScore: 179
         }
         const updatedRunState : RunState = applyAction({type: 'play', cards: [1]}, runState);
-        expect(updatedRunState.deck).not.toEqual(runState.deck);
+        expect(updatedRunState.phase).toEqual('shop');
+        expect(updatedRunState.deck).toEqual(runState.deck);
+    })
+    it('should reshuffle and deal a fresh hand when leaving the shop', () => {
+        runState = {...runState,
+            roundScore: 179
+        }
+        const shopState : RunState = applyAction({type: 'play', cards: [1]}, runState);
+        const nextRoundState : RunState = applyAction({type: 'leaveShop'}, shopState);
+        expect(nextRoundState.phase).toEqual('playing');
+        expect(nextRoundState.deck).not.toEqual(shopState.deck);
+        expect(nextRoundState.hand).toHaveLength(8);
+        expect(nextRoundState.handsLeft).toEqual(4);
+        expect(nextRoundState.discardsLeft).toEqual(3);
+    })
+    it('rejects leaveShop when not in the shop phase', () => {
+        const result = applyAction({type: 'leaveShop'}, runState);
+        expect(result).toBe(runState);
+    })
+    it('rejects play and discard while in the shop phase', () => {
+        runState = {...runState,
+            roundScore: 179
+        }
+        const shopState : RunState = applyAction({type: 'play', cards: [1]}, runState);
+        const result = applyAction({type: 'discard', cards: [0]}, shopState);
+        expect(result).toBe(shopState);
     })
     it('should fill the hand with new cards when playing or discarding cards', () => {
         let updatedRunState = applyAction({type: 'play', cards: [1]}, runState);
@@ -72,6 +97,64 @@ describe('applyAction', () => {
         runState = applyAction({type: 'play', cards: [1,2,3,4,5]}, runState);
         expect(runState.drawIndex).toEqual(13);
     })
+})
+
+describe('purchase', () => {
+    const seed: number = 12345;
+    let shopState: RunState;
+    beforeEach(() => {
+        shopState = { ...createRun(seed), phase: 'shop', money: 10 };
+    })
+
+    it('deducts money and records ownership on a successful purchase', () => {
+        const result = applyAction({ type: 'purchase', itemId: 'extraHand' }, shopState);
+        expect(result.money).toEqual(5);
+        expect(result.ownedItems).toContain('extraHand');
+    })
+
+    it('rejects a purchase when not in the shop phase', () => {
+        const playingState = {...shopState, phase: 'playing' as const};
+        const result = applyAction({ type: 'purchase', itemId: 'extraHand' }, playingState);
+        expect(result).toBe(playingState);
+    })
+
+    it('rejects buying an item already owned', () => {
+        const owned = {...shopState, ownedItems: ['extraHand' as const]};
+        const result = applyAction({ type: 'purchase', itemId: 'extraHand'}, owned);
+        expect(result).toBe(owned);
+    })
+
+    it('rejects a purchase when money is short of the price', () => {
+        const poor = {...shopState, money:4};
+        const result = applyAction({ type: 'purchase', itemId: 'extraHand'}, poor);
+        expect(result).toBe(poor);
+    })
+
+    it('allows a purchase when money exactly equals the price', () => {
+        const exact = {...shopState, money:5};
+        const result = applyAction({ type: 'purchase', itemId: 'extraHand'}, exact);
+        expect(result.money).toEqual(0);
+        expect(result.ownedItems).toContain('extraHand')
+    })
+
+    it('owning one item does not block buying the other', () => {
+        const ownsHand = {...shopState, ownedItems: ['extraHand' as const]};
+        const  result = applyAction({ type: 'purchase', itemId: 'extraDiscard'}, ownsHand);
+        expect(result.ownedItems).toContain('extraDiscard');
+    })
+
+    it("extraHand raises handsLeft once the next round starts", () => {
+        const afterPurchase = applyAction({ type: 'purchase', itemId: 'extraHand'}, shopState);
+        const afterLeave = applyAction({ type: 'leaveShop'}, afterPurchase)
+        expect(afterLeave.handsLeft).toEqual(5);
+    })
+    
+    it("extraDiscard raises discardsLeft once the next round starts", () => {
+        const afterPurchase = applyAction({ type: 'purchase', itemId: 'extraDiscard'}, shopState);
+        const afterLeave = applyAction({ type: 'leaveShop'}, afterPurchase)
+        expect(afterLeave.discardsLeft).toEqual(4);
+    })
+
 })
 
 describe('isRunOver', () => {
@@ -126,5 +209,24 @@ describe('run determinism', () => {
         const a = replay(20260724, LOG);
         expect(a.status).toBeOneOf(['playing', 'won', 'lost'])
         expect(a.handsLeft).toBeGreaterThan(0);
+    })
+    it('produces the same final score from the same seed and log', () => {
+        const a = replay(20260724, LOG);
+        const b = replay(20260724, LOG);
+        expect(a.totalScore).toEqual(b.totalScore);
+    })
+})
+
+describe('roundsSurvived', () => {
+    it('equals round on a win', () => {
+        expect(roundsSurvived('won', 8)).toEqual(8)
+    })
+    
+    it('equals round minus one on a loss', () => {
+        expect(roundsSurvived('lost', 4)).toEqual(3);
+    })
+
+    it('is zero when losing on the first round', () => {
+        expect(roundsSurvived('lost', 1)).toEqual(0);
     })
 })

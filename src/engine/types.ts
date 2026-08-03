@@ -31,6 +31,9 @@ export type HandType =
     handsLeft: number; // 4 per round
     discardsLeft: number; // 3 per round
     status: RunStatus;
+    phase: Phase;
+    money: number;
+    ownedItems: ShopItemId[];
   }
 
   export type Action = 
@@ -40,4 +43,10 @@ export type HandType =
   | {
     type: 'discard';
     cards: number[]
-  };
+  }
+  | { type: 'leaveShop' }
+  | { type: 'purchase'; itemId: ShopItemId };
+
+  export type Phase = 'playing' | 'shop';
+
+  export type ShopItemId = 'extraHand' | 'extraDiscard';
