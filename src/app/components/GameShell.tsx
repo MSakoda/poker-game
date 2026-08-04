@@ -23,6 +23,8 @@ export function GameShell({seed}: GameShellProps) {
     const [selected, setSelected] = useState<number[]>([]);
     const [showRules, setShowRules] = useState(false);
 
+    console.log( 'test secret:', process.env.NEXT_PUBLIC_TEST_SECRET );
+
     function toggleCard(index: number) {
         setSelected(prev =>
             prev.includes(index)
