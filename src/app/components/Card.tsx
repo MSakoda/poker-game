@@ -47,7 +47,7 @@ export function Card({ card, selected = false, onClick }: CardProps) {
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600',
                 SUIT_COLORS[card.suit],
                 selected
-                    ? '-translate-y-2 border-indigo-600 shadow-lg'
+                    ? '-translate-y-4 border-indigo-600 shadow-lg hover:-translate-y-3'
                     : 'border-neutral-300',
             )}
         >

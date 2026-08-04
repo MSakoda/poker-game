@@ -31,9 +31,9 @@ export function RulesPanel() {
             <tbody>
                 {HAND_ENTRIES.map(([type, {base, mult}]) => (
                     <tr key={type} className="border-b border-neutral-100">
-                        <th className="py-2">{HAND_TYPE_LABELS[type]}</th>
-                        <th className="py-2 text-right">{base}</th>
-                        <th className="py-2 text-right">{mult}</th>
+                        <td className="py-2">{HAND_TYPE_LABELS[type]}</td>
+                        <td className="py-2 text-right">{base}</td>
+                        <td className="py-2 text-right">{mult}</td>
                     </tr>
                 ))}
             </tbody>

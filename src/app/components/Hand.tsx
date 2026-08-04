@@ -31,24 +31,11 @@ export function Hand({ cards, selected, onToggle}: HandProps ) {
 
     const indexed = cards.map((card, index) => ({ card, index }));
     const sorted = sortIndexed(indexed, sortMode);
+
+    const selectedSortClasses = '100 underline bg-red-700';
+    const sortClass = `rounded-md border border-neutral-500 px-2 py-1 cursor-pointer font-semibold text-neutral-`;
     return (
         <div className="flex flex-col items-center gap-2">
-            <div className="flex gap-3 text-sm">
-                <button
-                    type="button"
-                    onClick={() => setSortMode('rank')}
-                    className={sortMode === 'rank' ? 'font-semibold text-neutral-100 underline' : 'text-neutral-400'}
-                >
-                    Sort: Rank
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setSortMode('suit')}
-                    className={sortMode === 'suit' ? 'font-semibold text-neutral-100 underline' : 'text-neutral-400'}
-                >
-                    Sort: Suit
-                </button>
-            </div>
             <div ref={parent} className="flex flex-wrap items-end justify-center gap-2 p-4">
                 {sorted.map(({card, index}) => (
                     <Card
@@ -58,6 +45,22 @@ export function Hand({ cards, selected, onToggle}: HandProps ) {
                         onClick={() => onToggle(index)}
                     />
                 ))}
+            </div>
+                        <div className="flex gap-3 text-sm">
+                <button
+                    type="button"
+                    onClick={() => setSortMode('rank')}
+                    className={sortClass + (sortMode === 'rank' ? selectedSortClasses : '400')}
+                >
+                    Sort: Rank
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setSortMode('suit')}
+                    className={sortClass + (sortMode === 'suit' ? selectedSortClasses : '400')}
+                >
+                    Sort: Suit
+                </button>
             </div>
         </div>
     );
